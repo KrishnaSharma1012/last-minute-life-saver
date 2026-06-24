@@ -1,0 +1,129 @@
+/* ===== Calendar View ===== */
+.calendar-page {
+  max-width: 1000px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cal-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cal-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Calendar Grid */
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.cal-day-header {
+  background: var(--card);
+  padding: 12px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.cal-cell {
+  background: var(--surface);
+  min-height: 100px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: background var(--transition-fast);
+}
+
+.cal-cell:hover {
+  background: var(--card);
+}
+
+.cal-empty {
+  background: var(--bg);
+}
+
+.cal-today {
+  background: rgba(124, 111, 255, 0.06) !important;
+}
+
+.cal-today .cal-date {
+  background: var(--purple);
+  color: #fff;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cal-date {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.cal-events {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.cal-event {
+  padding: 4px 8px;
+  background: var(--card);
+  border-left: 3px solid var(--purple);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.cal-event:hover {
+  background: var(--card-hover);
+}
+
+.cal-event-time {
+  font-size: 10px;
+  color: var(--text-muted);
+  display: block;
+}
+
+.cal-event-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+@media (max-width: 768px) {
+  .cal-cell {
+    min-height: 60px;
+    padding: 4px;
+  }
+
+  .cal-event-title {
+    font-size: 9px;
+  }
+}

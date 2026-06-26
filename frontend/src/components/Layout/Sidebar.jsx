@@ -11,7 +11,8 @@ import {
   LogOut,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
-import './Sidebar.css'
+import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 
 const navItems = [
   { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -22,7 +23,7 @@ const navItems = [
 ]
 
 export default function Sidebar() {
-  const { user, userProfile, logout } = useAuth()
+  const { user, logout } = useAuth()
   const navigate = useNavigate()
 
   const handleLogout = async () => {
@@ -31,62 +32,77 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="sidebar" id="sidebar">
+    <aside className="w-[260px] hidden md:flex flex-col bg-card/50 backdrop-blur-xl border-r border-border h-full p-4 gap-6 shrink-0 relative z-20">
       {/* Logo */}
-      <div className="sidebar-logo">
-        <div className="logo-icon">
-          <Zap size={20} />
+      <div className="flex items-center gap-3 px-2 mt-2">
+        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center shadow-[0_0_15px_rgba(124,111,255,0.3)]">
+          <Zap size={18} className="text-white fill-white" />
         </div>
-        <div className="logo-text">
-          <span className="logo-title">LifeSaver</span>
-          <span className="logo-subtitle">AI Companion</span>
+        <div className="flex flex-col">
+          <span className="font-bold font-heading text-[17px] tracking-tight leading-tight text-white">LifeSaver</span>
+          <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-widest">AI Companion</span>
         </div>
       </div>
 
       {/* Quick Add */}
-      <NavLink to="/tasks/new" className="sidebar-add-btn">
+      <Button 
+        onClick={() => navigate('/tasks/new')}
+        className="w-full bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 shadow-none justify-start gap-3 h-11 px-4 mt-2"
+      >
         <Plus size={18} />
         <span>New Task</span>
-      </NavLink>
+      </Button>
 
       {/* Navigation */}
-      <nav className="sidebar-nav">
-        <div className="nav-section-label">Menu</div>
+      <nav className="flex-1 flex flex-col gap-1 overflow-y-auto">
+        <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/60 px-3 mb-2 mt-4">Menu</div>
         {navItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
             end={item.path === '/'}
             className={({ isActive }) =>
-              `nav-item ${isActive ? 'nav-item-active' : ''}`
+              cn(
+                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-[14px] font-medium transition-all group",
+                isActive 
+                  ? "bg-purple-500/15 text-purple-400" 
+                  : "text-muted-foreground hover:bg-white/5 hover:text-white"
+              )
             }
           >
-            <item.icon size={18} />
-            <span>{item.label}</span>
-            {item.path === '/ai-chat' && (
-              <span className="nav-badge badge-purple">
-                <Sparkles size={10} /> AI
-              </span>
+            {({ isActive }) => (
+              <>
+                <item.icon size={18} className={cn("transition-colors", isActive ? "text-purple-400" : "text-muted-foreground group-hover:text-white")} />
+                <span className="flex-1">{item.label}</span>
+                {item.path === '/ai-chat' && (
+                  <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-purple-500/20 text-purple-400 text-[10px] font-bold uppercase tracking-wide">
+                    <Sparkles size={10} /> AI
+                  </span>
+                )}
+              </>
             )}
           </NavLink>
         ))}
       </nav>
 
       {/* Bottom — User + AI Status */}
-      <div className="sidebar-bottom">
-        <div className="sidebar-ai-card">
-          <div className="ai-card-icon">🧠</div>
-          <div className="ai-card-text">
-            <span className="ai-card-title">Gemini AI</span>
-            <span className="ai-card-status">
-              <span className="status-dot"></span>
+      <div className="flex flex-col gap-3 mt-auto">
+        <div className="flex items-center gap-3 p-3 rounded-xl bg-black/40 border border-white/5">
+          <div className="text-xl">🧠</div>
+          <div className="flex flex-col">
+            <span className="text-[13px] font-semibold text-white">Gemini AI</span>
+            <span className="flex items-center gap-1.5 text-[11px] font-medium text-green-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
               Connected
             </span>
           </div>
         </div>
 
         {user && (
-          <button className="sidebar-logout-btn" onClick={handleLogout}>
+          <button 
+            onClick={handleLogout}
+            className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-[13px] font-medium text-muted-foreground hover:bg-white/5 hover:text-white transition-colors w-full"
+          >
             <LogOut size={16} />
             <span>Sign Out</span>
           </button>

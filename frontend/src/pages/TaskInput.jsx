@@ -2,13 +2,18 @@ import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Mic, MicOff, Sparkles, Clock, Tag, ArrowRight,
-  CheckCircle2, Loader2, ChevronDown, Zap
+  CheckCircle2, Loader2, Zap
 } from 'lucide-react'
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
-import { db } from '../config/firebase'
+import { db, isDemoMode } from '../config/firebase'
+import { addDemoTask } from '../data/demoStore'
 import { useAuth } from '../context/AuthContext'
-import toast from 'react-hot-toast'
-import './TaskInput.css'
+import { toast } from 'sonner'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
+import { Badge } from '@/components/ui/badge'
+import { cn } from '@/lib/utils'
 
 export default function TaskInput() {
   const navigate = useNavigate()
@@ -91,7 +96,7 @@ export default function TaskInput() {
           'Review and finalize',
         ],
       })
-      toast('⚡ Using smart defaults (backend offline)', { icon: '⚠️' })
+      toast.info('⚡ Using smart defaults (backend offline)')
     } finally {
       setIsProcessing(false)
     }
@@ -124,7 +129,7 @@ export default function TaskInput() {
         deadlineDate.setDate(deadlineDate.getDate() + 3)
       }
 
-      await addDoc(collection(db, 'tasks'), {
+      const taskData = {
         userId: user.uid,
         title: aiResult.title,
         description: taskText.trim(),
@@ -136,8 +141,16 @@ export default function TaskInput() {
         category: aiResult.category || 'Work',
         actionSteps: aiResult.actionSteps || [],
         completedSteps: 0,
-        createdAt: serverTimestamp(),
-      })
+      }
+
+      if (isDemoMode) {
+        addDemoTask(taskData)
+      } else {
+        await addDoc(collection(db, 'tasks'), {
+          ...taskData,
+          createdAt: serverTimestamp(),
+        })
+      }
 
       toast.success('🎉 Task saved! Check your dashboard.')
       navigate('/')
@@ -150,123 +163,147 @@ export default function TaskInput() {
   }
 
   return (
-    <div className="task-input-page">
-      <div className="task-input-container">
-        {/* Header */}
-        <div className="ti-header animate-fade-up">
-          <div className="ti-header-icon">
-            <Zap size={22} />
-          </div>
-          <div>
-            <h2>Add New Task</h2>
-            <p>Type or speak your task — AI will handle the rest</p>
-          </div>
+    <div className="flex flex-col items-center justify-center min-h-[80vh] gap-8 max-w-3xl mx-auto w-full px-4">
+      {/* Header */}
+      <div className="flex flex-col items-center text-center gap-4 animate-fade-up">
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500/20 to-blue-500/20 flex items-center justify-center border border-purple-500/30 shadow-[0_0_30px_rgba(124,111,255,0.2)]">
+          <Zap size={32} className="text-purple-400" />
         </div>
+        <div>
+          <h2 className="text-3xl font-bold font-heading mb-2">Add New Task</h2>
+          <p className="text-muted-foreground text-lg">Type or speak your task — AI will handle the rest</p>
+        </div>
+      </div>
 
-        {/* Input Area */}
-        <div className="ti-input-section animate-fade-up delay-1">
-          <div className="ti-input-wrap">
-            <textarea
+      {/* Input Area */}
+      <Card className="w-full bg-card/60 backdrop-blur-xl border-border/50 shadow-2xl animate-fade-up delay-100 overflow-hidden relative">
+        {isListening && (
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 animate-pulse" />
+        )}
+        <CardContent className="p-6">
+          <div className="relative">
+            <Textarea
               value={taskText}
               onChange={(e) => setTaskText(e.target.value)}
               placeholder="e.g., Finish the marketing report by tomorrow 5pm, its urgent"
-              className="ti-textarea"
-              rows={3}
+              className="min-h-[120px] text-lg bg-background/50 border-border/50 resize-none focus-visible:ring-purple-500/50"
               id="task-text-input"
             />
-            <div className="ti-input-actions">
-              <button
-                className={`ti-voice-btn ${isListening ? 'listening' : ''}`}
-                onClick={isListening ? stopVoice : startVoice}
-                id="voice-input-btn"
-              >
-                {isListening ? <MicOff size={18} /> : <Mic size={18} />}
-                {isListening ? 'Stop' : 'Voice'}
-              </button>
-              <button
-                className="btn btn-primary"
-                onClick={processWithAI}
-                disabled={!taskText.trim() || isProcessing}
-                id="ai-process-btn"
-              >
-                {isProcessing ? (
-                  <><Loader2 size={16} className="spin" /> Processing...</>
-                ) : (
-                  <><Sparkles size={16} /> AI Process</>
-                )}
-              </button>
-            </div>
-          </div>
-          {isListening && (
-            <div className="listening-indicator">
-              <span className="listening-dot"></span>
-              Listening... speak your task
-            </div>
-          )}
-        </div>
-
-        {/* AI Result */}
-        {aiResult && (
-          <div className="ti-result animate-fade-up">
-            <div className="ti-result-header">
-              <Sparkles size={16} style={{ color: 'var(--purple)' }} />
-              <span>AI-Processed Task</span>
-            </div>
-
-            <div className="ti-result-grid">
-              <div className="ti-field">
-                <label>Task Title</label>
-                <div className="ti-field-value">{aiResult.title}</div>
+            {isListening && (
+              <div className="absolute top-3 right-3 flex items-center gap-2 text-red-500 text-sm font-semibold animate-pulse bg-background/80 px-3 py-1 rounded-full border border-red-500/20">
+                <div className="w-2 h-2 rounded-full bg-red-500" />
+                Listening...
               </div>
-              <div className="ti-field">
-                <label><Tag size={12} /> Priority</label>
-                <div className="ti-field-value">
-                  <span className={`badge badge-${aiResult.priority === 'high' ? 'pink' : aiResult.priority === 'critical' ? 'red' : 'orange'}`}>
-                    {aiResult.priority?.toUpperCase()} — Score {aiResult.priorityScore}
-                  </span>
+            )}
+          </div>
+          <div className="flex flex-col sm:flex-row items-center justify-between mt-6 gap-4">
+            <Button
+              variant={isListening ? "destructive" : "outline"}
+              className={cn("w-full sm:w-auto gap-2 transition-all duration-300", isListening && "animate-pulse")}
+              onClick={isListening ? stopVoice : startVoice}
+              id="voice-input-btn"
+            >
+              {isListening ? <MicOff size={18} /> : <Mic size={18} className="text-purple-400" />}
+              {isListening ? 'Stop Listening' : 'Use Voice Input'}
+            </Button>
+            <Button
+              className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white gap-2 shadow-lg shadow-purple-500/25"
+              onClick={processWithAI}
+              disabled={!taskText.trim() || isProcessing}
+              id="ai-process-btn"
+            >
+              {isProcessing ? (
+                <><Loader2 size={18} className="animate-spin" /> Processing...</>
+              ) : (
+                <><Sparkles size={18} /> AI Process Task</>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* AI Result */}
+      {aiResult && (
+        <Card className="w-full bg-card/80 backdrop-blur-xl border-border/50 shadow-2xl animate-fade-up delay-200">
+          <CardHeader className="border-b border-border/50 pb-4">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Sparkles size={20} className="text-purple-400" />
+              AI-Processed Task
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 flex flex-col gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="flex flex-col gap-1.5 md:col-span-2 bg-background/50 p-4 rounded-xl border border-border/50">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Task Title</span>
+                <span className="text-lg font-bold">{aiResult.title}</span>
+              </div>
+              
+              <div className="flex flex-col gap-1.5 bg-background/50 p-4 rounded-xl border border-border/50">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5"><Tag size={14} /> Priority</span>
+                <div>
+                  <Badge 
+                    variant="outline" 
+                    className={cn(
+                      "font-bold uppercase tracking-wider",
+                      aiResult.priority === 'critical' ? "text-red-500 bg-red-500/10 border-red-500/20" : 
+                      aiResult.priority === 'high' ? "text-pink-500 bg-pink-500/10 border-pink-500/20" :
+                      aiResult.priority === 'low' ? "text-green-500 bg-green-500/10 border-green-500/20" :
+                      "text-orange-500 bg-orange-500/10 border-orange-500/20"
+                    )}
+                  >
+                    {aiResult.priority} — Score {aiResult.priorityScore}
+                  </Badge>
                 </div>
               </div>
-              <div className="ti-field">
-                <label><Clock size={12} /> Deadline</label>
-                <div className="ti-field-value">{aiResult.deadline}</div>
+
+              <div className="flex flex-col gap-1.5 bg-background/50 p-4 rounded-xl border border-border/50">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5"><Clock size={14} /> Deadline</span>
+                <span className="font-semibold">{aiResult.deadline}</span>
               </div>
-              <div className="ti-field">
-                <label><Clock size={12} /> Estimated Time</label>
-                <div className="ti-field-value">{aiResult.estimatedHours} hours</div>
+
+              <div className="flex flex-col gap-1.5 bg-background/50 p-4 rounded-xl border border-border/50">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5"><Clock size={14} /> Estimated Time</span>
+                <span className="font-semibold">{aiResult.estimatedHours} hours</span>
               </div>
             </div>
 
             {/* Action Steps */}
-            <div className="ti-steps">
-              <h4>
-                <CheckCircle2 size={14} style={{ color: 'var(--green)' }} />
-                AI-Generated Action Plan
-              </h4>
-              <div className="ti-steps-list">
-                {aiResult.actionSteps?.map((step, i) => (
-                  <div key={i} className="ti-step-item">
-                    <span className="ti-step-num">{i + 1}</span>
-                    <span>{step}</span>
-                  </div>
-                ))}
+            {aiResult.actionSteps && aiResult.actionSteps.length > 0 && (
+              <div className="flex flex-col gap-3 mt-2">
+                <h4 className="font-bold flex items-center gap-2">
+                  <CheckCircle2 size={18} className="text-green-400" />
+                  AI-Generated Action Plan
+                </h4>
+                <div className="flex flex-col gap-2">
+                  {aiResult.actionSteps.map((step, i) => (
+                    <div key={i} className="flex items-start gap-3 bg-background/50 p-3 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors">
+                      <div className="w-6 h-6 rounded-full bg-purple-500/10 text-purple-400 flex items-center justify-center shrink-0 text-xs font-bold border border-purple-500/20">
+                        {i + 1}
+                      </div>
+                      <span className="text-sm font-medium pt-0.5">{step}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-
-            <button
-              className="btn btn-primary btn-lg w-full"
+            )}
+          </CardContent>
+          <CardFooter className="pt-0 p-6">
+            <Button
+              size="lg"
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white gap-2 shadow-lg shadow-purple-500/25 h-14 text-lg font-bold"
               onClick={saveTask}
               disabled={isSaving}
               id="save-task-btn"
             >
               {isSaving ? (
-                <><Loader2 size={18} className="spin" /> Saving...</>
+                <><Loader2 size={20} className="animate-spin" /> Saving...</>
               ) : (
-                <>Save Task <ArrowRight size={18} /></>
+                <>Save Task <ArrowRight size={20} /></>
               )}
-            </button>
-          </div>
-        )}
-      </div>
+            </Button>
+          </CardFooter>
+        </Card>
+      )}
     </div>
   )
 }

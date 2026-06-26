@@ -1,5 +1,6 @@
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Search, Bell, Menu, Sparkles } from 'lucide-react'
+import { useAuth } from '../../context/AuthContext'
 import './TopBar.css'
 
 const pageTitles = {
@@ -13,13 +14,16 @@ const pageTitles = {
 
 export default function TopBar() {
   const location = useLocation()
+  const navigate = useNavigate()
+  const { user, userProfile } = useAuth()
   const title = pageTitles[location.pathname] || 'Dashboard'
 
   const getGreeting = () => {
     const hour = new Date().getHours()
-    if (hour < 12) return 'Good morning'
-    if (hour < 17) return 'Good afternoon'
-    return 'Good evening'
+    const name = user?.displayName?.split(' ')[0] || 'there'
+    if (hour < 12) return `Good morning, ${name}`
+    if (hour < 17) return `Good afternoon, ${name}`
+    return `Good evening, ${name}`
   }
 
   return (
@@ -35,6 +39,14 @@ export default function TopBar() {
       </div>
 
       <div className="topbar-right">
+        {/* XP Badge */}
+        {userProfile && (
+          <div className="topbar-xp-badge">
+            <span className="xp-level">Lv.{userProfile.level || 1}</span>
+            <span className="xp-points">{userProfile.xp || 0} XP</span>
+          </div>
+        )}
+
         <div className="topbar-search">
           <Search size={16} className="search-icon" />
           <input
@@ -46,7 +58,7 @@ export default function TopBar() {
           <kbd className="search-kbd">⌘K</kbd>
         </div>
 
-        <button className="topbar-ai-btn" id="quick-ai-btn">
+        <button className="topbar-ai-btn" id="quick-ai-btn" onClick={() => navigate('/ai-chat')}>
           <Sparkles size={16} />
           <span>Ask AI</span>
         </button>
@@ -57,7 +69,11 @@ export default function TopBar() {
         </button>
 
         <div className="topbar-avatar" id="user-avatar">
-          <span>K</span>
+          {user?.photoURL ? (
+            <img src={user.photoURL} alt={user.displayName} className="avatar-img" />
+          ) : (
+            <span>{user?.displayName?.[0] || 'K'}</span>
+          )}
         </div>
       </div>
     </header>

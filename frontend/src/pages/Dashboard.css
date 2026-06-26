@@ -508,3 +508,117 @@
     grid-template-columns: repeat(4, 1fr);
   }
 }
+
+/* XP Card */
+.xp-card {
+  background: var(--card);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+}
+
+.xp-progress-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+
+.xp-level-text {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--purple);
+}
+
+.xp-amount {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.xp-progress-bar {
+  height: 8px;
+  background: rgba(139, 92, 246, 0.1);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.xp-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--purple), var(--blue));
+  border-radius: var(--radius-full);
+  transition: width 0.5s var(--ease-out);
+}
+
+.xp-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* Task Loading */
+.task-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  gap: 1rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+/* Task Empty */
+.task-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  gap: 0.75rem;
+  text-align: center;
+}
+
+.task-empty h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-heading);
+}
+
+.task-empty p {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* Task Card Actions */
+.task-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.task-done-btn {
+  padding: 8px;
+  border-radius: var(--radius-md);
+  background: var(--green-soft);
+  color: var(--green);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.task-done-btn:hover {
+  background: rgba(16, 185, 129, 0.25);
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.2);
+}
+
+/* Deadline Empty */
+.deadline-empty {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 1rem;
+}

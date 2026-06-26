@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
+import { useAuth } from './context/AuthContext'
 import Sidebar from './components/Layout/Sidebar'
 import TopBar from './components/Layout/TopBar'
 import Dashboard from './pages/Dashboard'
@@ -7,9 +8,30 @@ import TaskInput from './pages/TaskInput'
 import CalendarView from './pages/CalendarView'
 import Analytics from './pages/Analytics'
 import Habits from './pages/Habits'
+import Login from './pages/Login'
 import './App.css'
 
-function App() {
+// Protected route wrapper
+function ProtectedRoute({ children }) {
+  const { user, loading } = useAuth()
+
+  if (loading) {
+    return (
+      <div className="app-loading">
+        <div className="loading-spinner" />
+        <p>Loading your workspace...</p>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />
+  }
+
+  return children
+}
+
+function AppLayout() {
   return (
     <div className="app-layout">
       <div className="bg-grid" />
@@ -30,6 +52,41 @@ function App() {
       </div>
     </div>
   )
+}
+
+function App() {
+  return (
+    <Routes>
+      <Route path="/login" element={<LoginRoute />} />
+      <Route
+        path="/*"
+        element={
+          <ProtectedRoute>
+            <AppLayout />
+          </ProtectedRoute>
+        }
+      />
+    </Routes>
+  )
+}
+
+// Redirect to dashboard if already logged in
+function LoginRoute() {
+  const { user, loading } = useAuth()
+
+  if (loading) {
+    return (
+      <div className="app-loading">
+        <div className="loading-spinner" />
+      </div>
+    )
+  }
+
+  if (user) {
+    return <Navigate to="/" replace />
+  }
+
+  return <Login />
 }
 
 export default App

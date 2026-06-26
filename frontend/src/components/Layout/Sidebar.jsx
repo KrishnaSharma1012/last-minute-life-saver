@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard,
   MessageSquareText,
@@ -8,7 +8,9 @@ import {
   Plus,
   Zap,
   Sparkles,
+  LogOut,
 } from 'lucide-react'
+import { useAuth } from '../../context/AuthContext'
 import './Sidebar.css'
 
 const navItems = [
@@ -20,7 +22,13 @@ const navItems = [
 ]
 
 export default function Sidebar() {
-  const location = useLocation()
+  const { user, userProfile, logout } = useAuth()
+  const navigate = useNavigate()
+
+  const handleLogout = async () => {
+    await logout()
+    navigate('/login')
+  }
 
   return (
     <aside className="sidebar" id="sidebar">
@@ -64,7 +72,7 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      {/* Bottom Card */}
+      {/* Bottom — User + AI Status */}
       <div className="sidebar-bottom">
         <div className="sidebar-ai-card">
           <div className="ai-card-icon">🧠</div>
@@ -76,6 +84,13 @@ export default function Sidebar() {
             </span>
           </div>
         </div>
+
+        {user && (
+          <button className="sidebar-logout-btn" onClick={handleLogout}>
+            <LogOut size={16} />
+            <span>Sign Out</span>
+          </button>
+        )}
       </div>
     </aside>
   )

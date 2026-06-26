@@ -4,14 +4,19 @@ import {
   Mic, MicOff, Sparkles, Clock, Tag, ArrowRight,
   CheckCircle2, Loader2, ChevronDown, Zap
 } from 'lucide-react'
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
+import { db } from '../config/firebase'
+import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
 import './TaskInput.css'
 
 export default function TaskInput() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [taskText, setTaskText] = useState('')
   const [isListening, setIsListening] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
   const [aiResult, setAiResult] = useState(null)
   const recognitionRef = useRef(null)
 
@@ -43,6 +48,7 @@ export default function TaskInput() {
     recognition.start()
     recognitionRef.current = recognition
     setIsListening(true)
+    toast.success('🎙️ Listening...')
   }
 
   const stopVoice = () => {
@@ -64,14 +70,19 @@ export default function TaskInput() {
       if (!response.ok) throw new Error('AI processing failed')
       const data = await response.json()
       setAiResult(data.task)
+      toast.success('✨ AI processed your task!')
     } catch {
-      // Fallback demo result when backend isn't running
+      // Fallback — use Gemini-style smart defaults
+      const words = taskText.trim().split(' ')
+      const hasUrgent = /urgent|asap|immediately|deadline|due|today|tonight/i.test(taskText)
+      const hasTomorrow = /tomorrow/i.test(taskText)
+
       setAiResult({
-        title: taskText.trim(),
-        priority: 'high',
-        priorityScore: 78,
-        deadline: 'Tomorrow, 5:00 PM',
-        estimatedHours: 2,
+        title: taskText.trim().slice(0, 80),
+        priority: hasUrgent ? 'critical' : hasTomorrow ? 'high' : 'medium',
+        priorityScore: hasUrgent ? 90 : hasTomorrow ? 75 : 50,
+        deadline: hasUrgent ? 'Today, 11:59 PM' : hasTomorrow ? 'Tomorrow, 5:00 PM' : 'In 3 days',
+        estimatedHours: Math.max(1, Math.min(words.length / 5, 4)),
         category: 'Work',
         actionSteps: [
           'Break down the main objective',
@@ -80,14 +91,62 @@ export default function TaskInput() {
           'Review and finalize',
         ],
       })
+      toast('⚡ Using smart defaults (backend offline)', { icon: '⚠️' })
     } finally {
       setIsProcessing(false)
     }
   }
 
-  const saveTask = () => {
-    toast.success('Task saved successfully! 🎉')
-    navigate('/')
+  const saveTask = async () => {
+    if (!aiResult || !user) return
+    setIsSaving(true)
+
+    try {
+      // Parse deadline string to a Date
+      let deadlineDate
+      try {
+        if (aiResult.deadline.toLowerCase().includes('today')) {
+          deadlineDate = new Date()
+          deadlineDate.setHours(23, 59, 0, 0)
+        } else if (aiResult.deadline.toLowerCase().includes('tomorrow')) {
+          deadlineDate = new Date()
+          deadlineDate.setDate(deadlineDate.getDate() + 1)
+          deadlineDate.setHours(17, 0, 0, 0)
+        } else {
+          deadlineDate = new Date(aiResult.deadline)
+          if (isNaN(deadlineDate.getTime())) {
+            deadlineDate = new Date()
+            deadlineDate.setDate(deadlineDate.getDate() + 3)
+          }
+        }
+      } catch {
+        deadlineDate = new Date()
+        deadlineDate.setDate(deadlineDate.getDate() + 3)
+      }
+
+      await addDoc(collection(db, 'tasks'), {
+        userId: user.uid,
+        title: aiResult.title,
+        description: taskText.trim(),
+        deadline: deadlineDate.toISOString(),
+        priority: aiResult.priority || 'medium',
+        priorityScore: aiResult.priorityScore || 50,
+        estimatedHours: aiResult.estimatedHours || 1,
+        status: 'pending',
+        category: aiResult.category || 'Work',
+        actionSteps: aiResult.actionSteps || [],
+        completedSteps: 0,
+        createdAt: serverTimestamp(),
+      })
+
+      toast.success('🎉 Task saved! Check your dashboard.')
+      navigate('/')
+    } catch (error) {
+      console.error('Error saving task:', error)
+      toast.error('Failed to save task. Please try again.')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
@@ -193,8 +252,17 @@ export default function TaskInput() {
               </div>
             </div>
 
-            <button className="btn btn-primary btn-lg w-full" onClick={saveTask} id="save-task-btn">
-              Save Task <ArrowRight size={18} />
+            <button
+              className="btn btn-primary btn-lg w-full"
+              onClick={saveTask}
+              disabled={isSaving}
+              id="save-task-btn"
+            >
+              {isSaving ? (
+                <><Loader2 size={18} className="spin" /> Saving...</>
+              ) : (
+                <>Save Task <ArrowRight size={18} /></>
+              )}
             </button>
           </div>
         )}

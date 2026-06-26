@@ -262,3 +262,21 @@
   transform: none;
   box-shadow: none;
 }
+
+.chat-mic-btn.listening {
+  color: var(--red);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.msg-bubble code {
+  background: rgba(139, 92, 246, 0.15);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+}
+
+.msg-bubble strong {
+  color: var(--text-heading);
+  font-weight: 600;
+}

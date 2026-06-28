@@ -20,9 +20,19 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { cn } from '@/lib/utils'
+import { motion, AnimatePresence } from 'framer-motion'
 
 const DAYS_SHORT = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 const EMOJI_OPTIONS = ['🏋️', '📚', '💧', '🧘', '🏃', '💻', '🎨', '🎯', '✍️', '🥗']
+
+const stagger = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.07, delayChildren: 0.1 } },
+}
+const fadeUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
+}
 
 export default function Habits() {
   const { user, userProfile, updateProfile } = useAuth()
@@ -191,228 +201,267 @@ export default function Habits() {
   }
 
   return (
-    <div className="flex flex-col gap-6 max-w-6xl mx-auto w-full">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-up">
+    <motion.div
+      className="flex flex-col gap-6 max-w-6xl mx-auto w-full"
+      variants={stagger}
+      initial="hidden"
+      animate="visible"
+    >
+      {/* Header */}
+      <motion.div variants={fadeUp} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center shrink-0 border border-purple-500/30">
+          <div className="w-10 h-10 rounded-xl bg-purple-500/15 flex items-center justify-center shrink-0 border border-purple-500/20 glow-purple">
             <Target size={20} className="text-purple-400" />
           </div>
           <h2 className="text-2xl font-bold font-heading">Habit Tracker</h2>
         </div>
-        <Button 
-          onClick={() => setShowNewForm(!showNewForm)}
-          className="bg-purple-600 hover:bg-purple-700 text-white gap-2 shadow-lg shadow-purple-500/25"
-        >
-          {showNewForm ? <X size={16} /> : <Plus size={16} />}
-          {showNewForm ? 'Cancel' : 'New Habit'}
-        </Button>
-      </div>
+        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+          <Button
+            onClick={() => setShowNewForm(!showNewForm)}
+            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white gap-2 shadow-lg shadow-purple-500/25 transition-all hover:shadow-purple-500/35 hover:-translate-y-0.5 group"
+          >
+            {showNewForm ? <X size={16} /> : <Plus size={16} className="transition-transform group-hover:rotate-90 duration-300" />}
+            {showNewForm ? 'Cancel' : 'New Habit'}
+          </Button>
+        </motion.div>
+      </motion.div>
 
       {/* New Habit Form */}
-      {showNewForm && (
-        <Card className="bg-card/80 backdrop-blur-xl border-purple-500/30 shadow-[0_0_30px_rgba(168,85,247,0.15)] animate-fade-up">
-          <CardContent className="p-6 flex flex-col gap-6">
-            <div className="flex flex-wrap gap-2">
-              {EMOJI_OPTIONS.map(e => (
-                <button
-                  key={e}
-                  className={cn(
-                    "w-10 h-10 rounded-lg text-xl flex items-center justify-center transition-all duration-200 border",
-                    newHabit.emoji === e 
-                      ? "bg-purple-500/20 border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.3)] scale-110" 
-                      : "bg-background/50 border-border/50 hover:bg-muted/50 hover:border-border"
-                  )}
-                  onClick={() => setNewHabit(prev => ({ ...prev, emoji: e }))}
-                >
-                  {e}
-                </button>
-              ))}
-            </div>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Input
-                type="text"
-                placeholder="Habit name (e.g., Read 30 minutes)"
-                value={newHabit.name}
-                onChange={(e) => setNewHabit(prev => ({ ...prev, name: e.target.value }))}
-                className="flex-1 text-lg bg-background/50 focus-visible:ring-purple-500/50"
-                id="new-habit-name"
-                autoFocus
-                onKeyDown={(e) => e.key === 'Enter' && createHabit()}
-              />
-              <div className="flex items-center gap-3 w-full sm:w-auto">
-                <Select value={newHabit.frequency} onValueChange={(val) => setNewHabit(prev => ({ ...prev, frequency: val }))}>
-                  <SelectTrigger className="w-[120px] bg-background/50">
-                    <SelectValue placeholder="Frequency" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="daily">Daily</SelectItem>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button 
-                  onClick={createHabit} 
-                  disabled={saving}
-                  className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700"
-                >
-                  {saving ? <Loader2 size={16} className="animate-spin mr-2" /> : <Plus size={16} className="mr-2" />}
-                  {saving ? 'Creating...' : 'Create'}
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 animate-fade-up delay-75">
-        <Card className="bg-card/50 backdrop-blur-xl border-border/50">
-          <CardContent className="p-5 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center shrink-0">
-              <Flame size={24} className="text-orange-500" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-2xl font-bold font-heading">{totalStreak}</span>
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Best Streak</span>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-card/50 backdrop-blur-xl border-border/50">
-          <CardContent className="p-5 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center shrink-0">
-              <CheckCircle2 size={24} className="text-green-500" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-2xl font-bold font-heading">{completionRate}%</span>
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Today's Rate</span>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-card/50 backdrop-blur-xl border-border/50">
-          <CardContent className="p-5 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center shrink-0">
-              <Target size={24} className="text-purple-500" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-2xl font-bold font-heading">{habits.length}</span>
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Active Habits</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Habit Cards */}
-      {habits.length === 0 ? (
-        <Card className="bg-card/30 border-dashed border-2 border-border/50 animate-fade-up delay-150">
-          <CardContent className="p-12 flex flex-col items-center justify-center text-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-purple-500/10 flex items-center justify-center">
-              <Target size={32} className="text-purple-400/50" />
-            </div>
-            <div className="flex flex-col gap-1">
-              <h4 className="text-xl font-bold">No habits yet</h4>
-              <p className="text-muted-foreground">Start tracking your daily habits to build consistency!</p>
-            </div>
-            <Button onClick={() => setShowNewForm(true)} className="mt-2" variant="outline">
-              <Plus size={16} className="mr-2" /> Create First Habit
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {habits.map((habit, index) => {
-            const completed = isCompletedToday(habit)
-            const weekLog = getWeekLog(habit)
-
-            return (
-              <Card 
-                key={habit.id} 
-                className={cn(
-                  "bg-card/60 backdrop-blur-xl border-border/50 shadow-lg transition-all duration-300 relative group overflow-hidden",
-                  completed && "border-green-500/30 bg-green-500/5 shadow-[0_0_20px_rgba(34,197,94,0.1)]",
-                  `animate-fade-up delay-${Math.min(index + 1, 4) * 100}`
-                )}
-              >
-                {/* Delete button (shows on hover) */}
-                <button
-                  onClick={() => deleteHabit(habit.id)}
-                  className="absolute top-3 right-3 w-8 h-8 rounded-full bg-destructive/10 text-destructive flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive hover:text-white"
-                  title="Delete habit"
-                >
-                  <Trash2 size={14} />
-                </button>
-
-                <CardContent className="p-6 flex flex-col gap-5">
-                  <div className="flex items-start gap-4">
-                    <div className={cn(
-                      "w-12 h-12 rounded-xl text-2xl flex items-center justify-center shrink-0 border shadow-inner transition-colors",
-                      completed ? "bg-green-500/20 border-green-500/30" : "bg-background/80 border-border/50"
-                    )}>
-                      {habit.emoji}
-                    </div>
-                    <div className="flex flex-col flex-1 min-w-0 pr-8">
-                      <h4 className="font-bold text-lg truncate leading-tight mb-1">{habit.name}</h4>
-                      <Badge variant="secondary" className="w-fit text-[10px] uppercase tracking-wider py-0 px-1.5 h-4">
-                        {habit.frequency}
-                      </Badge>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <Button
-                      variant={completed ? "default" : "outline"}
+      <AnimatePresence>
+        {showNewForm && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: 'auto' }}
+            exit={{ opacity: 0, y: -20, height: 0 }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <Card className="glass-strong border-purple-500/20 shadow-[0_0_30px_rgba(124,111,255,0.1)] overflow-hidden relative">
+              <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-purple-500 via-blue-500 to-cyan-400" />
+              <CardContent className="p-6 flex flex-col gap-6">
+                <div className="flex flex-wrap gap-2">
+                  {EMOJI_OPTIONS.map(e => (
+                    <motion.button
+                      key={e}
+                      whileHover={{ scale: 1.15 }}
+                      whileTap={{ scale: 0.9 }}
                       className={cn(
-                        "w-full h-12 gap-2 transition-all duration-300",
-                        completed 
-                          ? "bg-green-500 hover:bg-green-600 text-white shadow-lg shadow-green-500/25" 
-                          : "hover:border-purple-500/50 hover:bg-purple-500/5 hover:text-purple-400"
+                        "w-10 h-10 rounded-lg text-xl flex items-center justify-center transition-all duration-200 border",
+                        newHabit.emoji === e
+                          ? "bg-purple-500/20 border-purple-500/40 shadow-[0_0_15px_rgba(124,111,255,0.3)] scale-110"
+                          : "glass-light border-white/[0.06] hover:bg-white/[0.04] hover:border-white/[0.1]"
                       )}
-                      onClick={() => completeHabit(habit.id, habit)}
+                      onClick={() => setNewHabit(prev => ({ ...prev, emoji: e }))}
                     >
-                      {completed ? (
-                        <><CheckCircle2 size={18} /> Completed Today</>
-                      ) : (
-                        <><div className="w-4 h-4 rounded-full border-2 border-current" /> Mark Complete</>
-                      )}
+                      {e}
+                    </motion.button>
+                  ))}
+                </div>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Input
+                    type="text"
+                    placeholder="Habit name (e.g., Read 30 minutes)"
+                    value={newHabit.name}
+                    onChange={(e) => setNewHabit(prev => ({ ...prev, name: e.target.value }))}
+                    className="flex-1 text-lg glass-light border-white/[0.06] focus-visible:ring-purple-500/30 focus-visible:border-purple-500/20"
+                    id="new-habit-name"
+                    autoFocus
+                    onKeyDown={(e) => e.key === 'Enter' && createHabit()}
+                  />
+                  <div className="flex items-center gap-3 w-full sm:w-auto">
+                    <Select value={newHabit.frequency} onValueChange={(val) => setNewHabit(prev => ({ ...prev, frequency: val }))}>
+                      <SelectTrigger className="w-[120px] glass-light border-white/[0.06]">
+                        <SelectValue placeholder="Frequency" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="daily">Daily</SelectItem>
+                        <SelectItem value="weekly">Weekly</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      onClick={createHabit}
+                      disabled={saving}
+                      className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 shadow-lg shadow-purple-500/20"
+                    >
+                      {saving ? <Loader2 size={16} className="animate-spin mr-2" /> : <Plus size={16} className="mr-2" />}
+                      {saving ? 'Creating...' : 'Create'}
                     </Button>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-                  {/* Week Heatmap */}
-                  <div className="flex items-center justify-between bg-background/50 p-3 rounded-lg border border-border/50">
-                    {DAYS_SHORT.map((day, i) => (
-                      <div key={i} className="flex flex-col items-center gap-1.5">
-                        <div className={cn(
-                          "w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold transition-colors",
-                          weekLog[i] 
-                            ? "bg-green-500 text-white shadow-[0_0_10px_rgba(34,197,94,0.4)]" 
-                            : "bg-muted text-muted-foreground"
-                        )}>
-                          {weekLog[i] && <CheckCircle2 size={12} strokeWidth={3} />}
-                        </div>
-                        <span className="text-[9px] font-bold text-muted-foreground">{day}</span>
-                      </div>
-                    ))}
-                  </div>
+      {/* Stats */}
+      <motion.div variants={fadeUp} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {[
+          { icon: Flame, color: 'orange', value: totalStreak, label: 'Best Streak' },
+          { icon: CheckCircle2, color: 'green', value: `${completionRate}%`, label: "Today's Rate" },
+          { icon: Target, color: 'purple', value: habits.length, label: 'Active Habits' },
+        ].map((stat, i) => (
+          <motion.div key={i} variants={fadeUp} whileHover={{ y: -2 }}>
+            <Card className="glass-card card-hover border-white/[0.05]">
+              <CardContent className="p-5 flex items-center gap-4">
+                <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center shrink-0",
+                  stat.color === 'orange' ? 'bg-orange-500/10' : stat.color === 'green' ? 'bg-green-500/10' : 'bg-purple-500/10'
+                )}>
+                  <stat.icon size={24} className={cn(
+                    stat.color === 'orange' ? 'text-orange-500' : stat.color === 'green' ? 'text-green-500' : 'text-purple-500'
+                  )} />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-2xl font-bold font-heading">{stat.value}</span>
+                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.15em]">{stat.label}</span>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
+      </motion.div>
 
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="flex items-center gap-1.5 font-semibold text-orange-500">
-                        <Flame size={16} /> {habit.streak || 0} day streak
-                      </span>
-                    </div>
+      {/* Habit Cards */}
+      <AnimatePresence mode="popLayout">
+        {habits.length === 0 ? (
+          <motion.div
+            key="empty"
+            variants={fadeUp}
+          >
+            <Card className="border-dashed border-2 border-white/[0.06] bg-transparent hover:glass-light transition-all cursor-pointer" onClick={() => setShowNewForm(true)}>
+              <CardContent className="p-12 flex flex-col items-center justify-center text-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-purple-500/10 flex items-center justify-center animate-float">
+                  <Target size={32} className="text-purple-400/50" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <h4 className="text-xl font-bold font-heading">No habits yet</h4>
+                  <p className="text-muted-foreground">Start tracking your daily habits to build consistency!</p>
+                </div>
+                <Button onClick={() => setShowNewForm(true)} variant="outline" className="mt-2 glass-light border-white/[0.06] hover:border-purple-500/20 hover:bg-purple-500/5">
+                  <Plus size={16} className="mr-2" /> Create First Habit
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ) : (
+          <motion.div variants={stagger} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {habits.map((habit, index) => {
+              const completed = isCompletedToday(habit)
+              const weekLog = getWeekLog(habit)
 
-                    {/* AI Insight */}
-                    {habit.aiInsight && (
-                      <div className="flex items-start gap-2 bg-purple-500/5 p-2.5 rounded-lg border border-purple-500/10 mt-1">
-                        <Sparkles size={14} className="text-purple-400 mt-0.5 shrink-0" />
-                        <span className="text-xs font-medium text-purple-200 leading-snug">{habit.aiInsight}</span>
-                      </div>
+              return (
+                <motion.div
+                  key={habit.id}
+                  layout
+                  variants={fadeUp}
+                  whileHover={{ y: -3, transition: { duration: 0.2 } }}
+                >
+                  <Card
+                    className={cn(
+                      "glass-card card-hover border-white/[0.05] shadow-xl relative group overflow-hidden",
+                      completed && "border-green-500/20 shadow-[0_0_20px_rgba(34,197,94,0.08)]"
                     )}
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })}
-        </div>
-      )}
-    </div>
+                  >
+                    {/* Completion glow overlay */}
+                    {completed && (
+                      <div className="absolute inset-0 bg-gradient-to-br from-green-500/[0.04] to-transparent pointer-events-none" />
+                    )}
+
+                    {/* Delete button (shows on hover) */}
+                    <motion.button
+                      onClick={() => deleteHabit(habit.id)}
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      className="absolute top-3 right-3 w-8 h-8 rounded-full bg-destructive/10 text-destructive flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive hover:text-white z-10"
+                      title="Delete habit"
+                    >
+                      <Trash2 size={14} />
+                    </motion.button>
+
+                    <CardContent className="p-6 flex flex-col gap-5 relative z-[1]">
+                      <div className="flex items-start gap-4">
+                        <motion.div
+                          whileTap={{ scale: 0.9, rotate: -15 }}
+                          className={cn(
+                            "w-12 h-12 rounded-xl text-2xl flex items-center justify-center shrink-0 border shadow-inner transition-all duration-300",
+                            completed ? "bg-green-500/15 border-green-500/25 shadow-[0_0_12px_rgba(34,197,94,0.15)]" : "glass-light border-white/[0.06]"
+                          )}
+                        >
+                          {habit.emoji}
+                        </motion.div>
+                        <div className="flex flex-col flex-1 min-w-0 pr-8">
+                          <h4 className="font-bold text-lg truncate leading-tight mb-1">{habit.name}</h4>
+                          <Badge variant="outline" className="w-fit text-[9px] uppercase tracking-[0.12em] py-0 px-1.5 h-4 glass-light border-white/[0.06] text-muted-foreground/60">
+                            {habit.frequency}
+                          </Badge>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <motion.div className="w-full" whileTap={{ scale: 0.98 }}>
+                          <Button
+                            variant={completed ? "default" : "outline"}
+                            className={cn(
+                              "w-full h-12 gap-2 transition-all duration-300",
+                              completed
+                                ? "bg-green-500 hover:bg-green-600 text-white shadow-lg shadow-green-500/25"
+                                : "glass-light border-white/[0.06] hover:border-purple-500/30 hover:bg-purple-500/5 hover:text-purple-400"
+                            )}
+                            onClick={() => completeHabit(habit.id, habit)}
+                          >
+                            {completed ? (
+                              <><CheckCircle2 size={18} /> Completed Today</>
+                            ) : (
+                              <><div className="w-4 h-4 rounded-full border-2 border-current" /> Mark Complete</>
+                            )}
+                          </Button>
+                        </motion.div>
+                      </div>
+
+                      {/* Week Heatmap */}
+                      <div className="flex items-center justify-between glass-light p-3 rounded-lg border border-white/[0.04]">
+                        {DAYS_SHORT.map((day, i) => (
+                          <div key={i} className="flex flex-col items-center gap-1.5">
+                            <motion.div
+                              initial={{ scale: 0.5, opacity: 0 }}
+                              animate={{ scale: 1, opacity: 1 }}
+                              transition={{ delay: 0.3 + i * 0.04 }}
+                              className={cn(
+                                "w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold transition-all duration-300",
+                                weekLog[i]
+                                  ? "bg-green-500 text-white shadow-[0_0_10px_rgba(34,197,94,0.4)]"
+                                  : "bg-white/[0.04] text-muted-foreground/40"
+                              )}
+                            >
+                              {weekLog[i] && <CheckCircle2 size={12} strokeWidth={3} />}
+                            </motion.div>
+                            <span className="text-[9px] font-bold text-muted-foreground/40">{day}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="flex items-center gap-1.5 font-semibold text-orange-500">
+                            <Flame size={16} /> {habit.streak || 0} day streak
+                          </span>
+                        </div>
+
+                        {/* AI Insight */}
+                        {habit.aiInsight && (
+                          <div className="flex items-start gap-2 bg-purple-500/[0.05] p-2.5 rounded-lg border border-purple-500/10 mt-1">
+                            <Sparkles size={14} className="text-purple-400 mt-0.5 shrink-0" />
+                            <span className="text-[11px] font-medium text-purple-300/80 leading-snug">{habit.aiInsight}</span>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              )
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   )
 }

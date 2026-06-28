@@ -9,7 +9,6 @@ import CalendarView from './pages/CalendarView'
 import Analytics from './pages/Analytics'
 import Habits from './pages/Habits'
 import Login from './pages/Login'
-import './App.css'
 
 // Protected route wrapper
 function ProtectedRoute({ children }) {

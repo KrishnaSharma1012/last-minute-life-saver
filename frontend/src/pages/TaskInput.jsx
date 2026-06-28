@@ -14,6 +14,12 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { motion, AnimatePresence } from 'framer-motion'
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
+}
 
 export default function TaskInput() {
   const navigate = useNavigate()
@@ -162,148 +168,203 @@ export default function TaskInput() {
     }
   }
 
+  const priorityColors = {
+    critical: 'text-red-400 bg-red-500/10 border-red-500/20',
+    high: 'text-pink-400 bg-pink-500/10 border-pink-500/20',
+    medium: 'text-orange-400 bg-orange-500/10 border-orange-500/20',
+    low: 'text-green-400 bg-green-500/10 border-green-500/20',
+  }
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-[80vh] gap-8 max-w-3xl mx-auto w-full px-4">
+    <motion.div
+      className="flex flex-col items-center justify-center min-h-[80vh] gap-8 max-w-3xl mx-auto w-full px-4"
+      initial="hidden"
+      animate="visible"
+      variants={{ hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.12 } } }}
+    >
       {/* Header */}
-      <div className="flex flex-col items-center text-center gap-4 animate-fade-up">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500/20 to-blue-500/20 flex items-center justify-center border border-purple-500/30 shadow-[0_0_30px_rgba(124,111,255,0.2)]">
-          <Zap size={32} className="text-purple-400" />
+      <motion.div variants={fadeUp} className="flex flex-col items-center text-center gap-4">
+        <div className="relative">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500/20 to-blue-500/20 flex items-center justify-center border border-purple-500/20 glow-purple animate-float">
+            <Zap size={32} className="text-purple-400" />
+          </div>
+          <div className="absolute inset-0 rounded-2xl border-2 border-purple-500/20 animate-pulse-ring" />
         </div>
         <div>
           <h2 className="text-3xl font-bold font-heading mb-2">Add New Task</h2>
-          <p className="text-muted-foreground text-lg">Type or speak your task — AI will handle the rest</p>
+          <p className="text-muted-foreground text-base">Type or speak your task — AI will handle the rest</p>
         </div>
-      </div>
+      </motion.div>
 
       {/* Input Area */}
-      <Card className="w-full bg-card/60 backdrop-blur-xl border-border/50 shadow-2xl animate-fade-up delay-100 overflow-hidden relative">
-        {isListening && (
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 animate-pulse" />
-        )}
-        <CardContent className="p-6">
-          <div className="relative">
-            <Textarea
-              value={taskText}
-              onChange={(e) => setTaskText(e.target.value)}
-              placeholder="e.g., Finish the marketing report by tomorrow 5pm, its urgent"
-              className="min-h-[120px] text-lg bg-background/50 border-border/50 resize-none focus-visible:ring-purple-500/50"
-              id="task-text-input"
+      <motion.div variants={fadeUp} className="w-full">
+        <Card className="glass-strong border-white/[0.06] shadow-2xl overflow-hidden relative">
+          {isListening && (
+            <motion.div
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 origin-left"
             />
-            {isListening && (
-              <div className="absolute top-3 right-3 flex items-center gap-2 text-red-500 text-sm font-semibold animate-pulse bg-background/80 px-3 py-1 rounded-full border border-red-500/20">
-                <div className="w-2 h-2 rounded-full bg-red-500" />
-                Listening...
-              </div>
-            )}
-          </div>
-          <div className="flex flex-col sm:flex-row items-center justify-between mt-6 gap-4">
-            <Button
-              variant={isListening ? "destructive" : "outline"}
-              className={cn("w-full sm:w-auto gap-2 transition-all duration-300", isListening && "animate-pulse")}
-              onClick={isListening ? stopVoice : startVoice}
-              id="voice-input-btn"
-            >
-              {isListening ? <MicOff size={18} /> : <Mic size={18} className="text-purple-400" />}
-              {isListening ? 'Stop Listening' : 'Use Voice Input'}
-            </Button>
-            <Button
-              className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white gap-2 shadow-lg shadow-purple-500/25"
-              onClick={processWithAI}
-              disabled={!taskText.trim() || isProcessing}
-              id="ai-process-btn"
-            >
-              {isProcessing ? (
-                <><Loader2 size={18} className="animate-spin" /> Processing...</>
-              ) : (
-                <><Sparkles size={18} /> AI Process Task</>
+          )}
+          {isProcessing && (
+            <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-purple-500 via-blue-500 to-cyan-400 animate-shimmer" style={{ backgroundSize: '200% 100%' }} />
+          )}
+          <CardContent className="p-6">
+            <div className="relative">
+              <Textarea
+                value={taskText}
+                onChange={(e) => setTaskText(e.target.value)}
+                placeholder="e.g., Finish the marketing report by tomorrow 5pm, its urgent"
+                className="min-h-[120px] text-base glass-light border-white/[0.06] resize-none focus-visible:ring-purple-500/30 focus-visible:border-purple-500/20 placeholder:text-muted-foreground/30 transition-all"
+                id="task-text-input"
+              />
+              {isListening && (
+                <div className="absolute top-3 right-3 flex items-center gap-2 text-red-400 text-xs font-semibold animate-pulse glass px-3 py-1.5 rounded-full border border-red-500/20">
+                  <div className="w-2 h-2 rounded-full bg-red-500 shadow-lg shadow-red-500/50" />
+                  Listening...
+                </div>
               )}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+            </div>
+            <div className="flex flex-col sm:flex-row items-center justify-between mt-6 gap-4">
+              <Button
+                variant={isListening ? "destructive" : "outline"}
+                className={cn(
+                  "w-full sm:w-auto gap-2 transition-all duration-300 glass-light border-white/[0.06] hover:border-white/[0.1]",
+                  isListening && "bg-red-500/20 border-red-500/30 text-red-400 hover:bg-red-500/30 animate-pulse"
+                )}
+                onClick={isListening ? stopVoice : startVoice}
+                id="voice-input-btn"
+              >
+                {isListening ? <MicOff size={18} /> : <Mic size={18} className="text-purple-400" />}
+                {isListening ? 'Stop Listening' : 'Use Voice Input'}
+              </Button>
+              <Button
+                className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white gap-2 shadow-lg shadow-purple-500/25 transition-all hover:shadow-purple-500/35 hover:-translate-y-0.5 group"
+                onClick={processWithAI}
+                disabled={!taskText.trim() || isProcessing}
+                id="ai-process-btn"
+              >
+                {isProcessing ? (
+                  <><Loader2 size={18} className="animate-spin" /> Processing...</>
+                ) : (
+                  <><Sparkles size={18} className="transition-transform group-hover:rotate-12" /> AI Process Task</>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
 
       {/* AI Result */}
-      {aiResult && (
-        <Card className="w-full bg-card/80 backdrop-blur-xl border-border/50 shadow-2xl animate-fade-up delay-200">
-          <CardHeader className="border-b border-border/50 pb-4">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Sparkles size={20} className="text-purple-400" />
-              AI-Processed Task
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6 flex flex-col gap-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="flex flex-col gap-1.5 md:col-span-2 bg-background/50 p-4 rounded-xl border border-border/50">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Task Title</span>
-                <span className="text-lg font-bold">{aiResult.title}</span>
-              </div>
-              
-              <div className="flex flex-col gap-1.5 bg-background/50 p-4 rounded-xl border border-border/50">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5"><Tag size={14} /> Priority</span>
-                <div>
-                  <Badge 
-                    variant="outline" 
-                    className={cn(
-                      "font-bold uppercase tracking-wider",
-                      aiResult.priority === 'critical' ? "text-red-500 bg-red-500/10 border-red-500/20" : 
-                      aiResult.priority === 'high' ? "text-pink-500 bg-pink-500/10 border-pink-500/20" :
-                      aiResult.priority === 'low' ? "text-green-500 bg-green-500/10 border-green-500/20" :
-                      "text-orange-500 bg-orange-500/10 border-orange-500/20"
-                    )}
+      <AnimatePresence>
+        {aiResult && (
+          <motion.div
+            className="w-full"
+            initial={{ opacity: 0, y: 30, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <Card className="glass-strong border-purple-500/15 shadow-2xl overflow-hidden relative">
+              {/* Top gradient accent */}
+              <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-purple-500 via-blue-500 to-cyan-400" />
+
+              <CardHeader className="border-b border-white/[0.04] pb-4">
+                <CardTitle className="flex items-center gap-2 text-lg font-heading">
+                  <div className="w-7 h-7 rounded-lg bg-purple-500/15 flex items-center justify-center border border-purple-500/20">
+                    <Sparkles size={14} className="text-purple-400" />
+                  </div>
+                  AI-Processed Task
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 flex flex-col gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                    className="flex flex-col gap-1.5 md:col-span-2 glass-light p-4 rounded-xl"
                   >
-                    {aiResult.priority} — Score {aiResult.priorityScore}
-                  </Badge>
+                    <span className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-[0.15em]">Task Title</span>
+                    <span className="text-lg font-bold">{aiResult.title}</span>
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.15 }}
+                    className="flex flex-col gap-1.5 glass-light p-4 rounded-xl"
+                  >
+                    <span className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-[0.15em] flex items-center gap-1.5"><Tag size={12} /> Priority</span>
+                    <Badge
+                      variant="outline"
+                      className={cn("font-bold uppercase tracking-[0.12em] w-fit", priorityColors[aiResult.priority] || priorityColors.medium)}
+                    >
+                      {aiResult.priority} — Score {aiResult.priorityScore}
+                    </Badge>
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="flex flex-col gap-1.5 glass-light p-4 rounded-xl"
+                  >
+                    <span className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-[0.15em] flex items-center gap-1.5"><Clock size={12} /> Deadline</span>
+                    <span className="font-semibold">{aiResult.deadline}</span>
+                  </motion.div>
                 </div>
-              </div>
 
-              <div className="flex flex-col gap-1.5 bg-background/50 p-4 rounded-xl border border-border/50">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5"><Clock size={14} /> Deadline</span>
-                <span className="font-semibold">{aiResult.deadline}</span>
-              </div>
-
-              <div className="flex flex-col gap-1.5 bg-background/50 p-4 rounded-xl border border-border/50">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5"><Clock size={14} /> Estimated Time</span>
-                <span className="font-semibold">{aiResult.estimatedHours} hours</span>
-              </div>
-            </div>
-
-            {/* Action Steps */}
-            {aiResult.actionSteps && aiResult.actionSteps.length > 0 && (
-              <div className="flex flex-col gap-3 mt-2">
-                <h4 className="font-bold flex items-center gap-2">
-                  <CheckCircle2 size={18} className="text-green-400" />
-                  AI-Generated Action Plan
-                </h4>
-                <div className="flex flex-col gap-2">
-                  {aiResult.actionSteps.map((step, i) => (
-                    <div key={i} className="flex items-start gap-3 bg-background/50 p-3 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors">
-                      <div className="w-6 h-6 rounded-full bg-purple-500/10 text-purple-400 flex items-center justify-center shrink-0 text-xs font-bold border border-purple-500/20">
-                        {i + 1}
-                      </div>
-                      <span className="text-sm font-medium pt-0.5">{step}</span>
+                {/* Action Steps */}
+                {aiResult.actionSteps && aiResult.actionSteps.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="flex flex-col gap-3 mt-1"
+                  >
+                    <h4 className="font-bold flex items-center gap-2 font-heading text-[15px]">
+                      <CheckCircle2 size={16} className="text-green-400" />
+                      AI-Generated Action Plan
+                    </h4>
+                    <div className="flex flex-col gap-2">
+                      {aiResult.actionSteps.map((step, i) => (
+                        <motion.div
+                          key={i}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.35 + i * 0.06 }}
+                          className="flex items-start gap-3 glass-light p-3 rounded-lg hover:bg-white/[0.03] transition-colors"
+                        >
+                          <div className="w-6 h-6 rounded-full bg-purple-500/10 text-purple-400 flex items-center justify-center shrink-0 text-[10px] font-bold border border-purple-500/20">
+                            {i + 1}
+                          </div>
+                          <span className="text-[13px] font-medium pt-0.5">{step}</span>
+                        </motion.div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </CardContent>
-          <CardFooter className="pt-0 p-6">
-            <Button
-              size="lg"
-              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white gap-2 shadow-lg shadow-purple-500/25 h-14 text-lg font-bold"
-              onClick={saveTask}
-              disabled={isSaving}
-              id="save-task-btn"
-            >
-              {isSaving ? (
-                <><Loader2 size={20} className="animate-spin" /> Saving...</>
-              ) : (
-                <>Save Task <ArrowRight size={20} /></>
-              )}
-            </Button>
-          </CardFooter>
-        </Card>
-      )}
-    </div>
+                  </motion.div>
+                )}
+              </CardContent>
+              <CardFooter className="pt-0 p-6">
+                <Button
+                  size="lg"
+                  className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white gap-2 shadow-lg shadow-purple-500/25 h-14 text-lg font-bold transition-all hover:shadow-purple-500/35 hover:-translate-y-0.5 group"
+                  onClick={saveTask}
+                  disabled={isSaving}
+                  id="save-task-btn"
+                >
+                  {isSaving ? (
+                    <><Loader2 size={20} className="animate-spin" /> Saving...</>
+                  ) : (
+                    <>Save Task <ArrowRight size={20} className="transition-transform group-hover:translate-x-1" /></>
+                  )}
+                </Button>
+              </CardFooter>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   )
 }

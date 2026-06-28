@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react'
-import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth'
+import { signInWithPopup, signOut, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth'
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, googleProvider, db, isDemoMode } from '../config/firebase'
 
@@ -82,6 +82,42 @@ export function AuthProvider({ children }) {
     return result.user
   }
 
+  const loginWithEmail = async (email, password) => {
+    if (isDemoMode) {
+      setUser(DEMO_USER)
+      setUserProfile({ ...DEMO_PROFILE })
+      return
+    }
+    const result = await signInWithEmailAndPassword(auth, email, password)
+    return result.user
+  }
+
+  const signupWithEmail = async (email, password, displayName) => {
+    if (isDemoMode) {
+      setUser(DEMO_USER)
+      setUserProfile({ ...DEMO_PROFILE, displayName: displayName || 'Demo User' })
+      return
+    }
+    const result = await createUserWithEmailAndPassword(auth, email, password)
+    
+    // Create their initial profile
+    const userRef = doc(db, 'users', result.user.uid)
+    const newProfile = {
+      displayName: displayName || email.split('@')[0],
+      email: email,
+      photoURL: null,
+      level: 1,
+      xp: 0,
+      streakDays: 0,
+      tasksCompleted: 0,
+      createdAt: serverTimestamp(),
+    }
+    await setDoc(userRef, newProfile)
+    setUserProfile(newProfile)
+    
+    return result.user
+  }
+
   const logout = async () => {
     if (isDemoMode) {
       setUser(null)
@@ -105,7 +141,7 @@ export function AuthProvider({ children }) {
   return (
     <AuthContext.Provider value={{
       user, userProfile, loading,
-      loginWithGoogle, logout, updateProfile,
+      loginWithGoogle, loginWithEmail, signupWithEmail, logout, updateProfile,
       isDemoMode,
     }}>
       {children}

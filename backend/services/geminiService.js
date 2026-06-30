@@ -3,9 +3,10 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 // Initialize Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'dummy_key');
 const model = genAI.getGenerativeModel({ 
-  model: 'gemini-pro'
+  model: 'gemini-3.5-flash',
+  systemInstruction: "You are an elite productivity and discipline coach. Your name is Vibeship AI. Keep responses concise, motivational, and actionable."
 });
-const jsonModel = genAI.getGenerativeModel({ model: 'gemini-pro', generationConfig: { responseMimeType: "application/json" } });
+const jsonModel = genAI.getGenerativeModel({ model: 'gemini-3.5-flash', generationConfig: { responseMimeType: "application/json" } });
 
 // Helper to check if we have a real key
 const hasRealKey = () => process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.length > 10;

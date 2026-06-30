@@ -3,8 +3,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 // Initialize Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'dummy_key');
 const model = genAI.getGenerativeModel({ 
-  model: 'gemini-pro',
-  systemInstruction: "You are an elite productivity and discipline coach. Your name is Vibeship AI. Keep responses concise, motivational, and actionable."
+  model: 'gemini-pro'
 });
 const jsonModel = genAI.getGenerativeModel({ model: 'gemini-pro', generationConfig: { responseMimeType: "application/json" } });
 

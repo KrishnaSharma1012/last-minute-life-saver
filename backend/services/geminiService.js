@@ -39,7 +39,7 @@ async function chatWithAI(message, history = []) {
     return result.response.text();
   } catch (err) {
     console.error('Gemini API Error:', err);
-    return "I'm having trouble connecting to my brain right now. Please check my API key!";
+    return "I'm having trouble connecting to my brain right now. Error details: " + err.message;
   }
 }
 

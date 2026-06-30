@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { chatWithAI, parseTaskInput, prioritizeTasks, generateActionPlan, generateInsights } = require('../services/geminiService');
+const { chatWithAI, parseTaskInput, prioritizeTasks, generateActionPlan, generateInsights, listModels } = require('../services/geminiService');
 
 // POST /api/ai/chat - Chat with Gemini AI
 router.post('/chat', async (req, res) => {
@@ -33,6 +33,17 @@ router.post('/parse-task', async (req, res) => {
   } catch (error) {
     console.error('Parse Task Error:', error.message);
     res.status(500).json({ error: 'Failed to parse task', message: error.message });
+  }
+});
+
+// Debug route to list models
+router.get('/models', async (req, res) => {
+  try {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${process.env.GEMINI_API_KEY}`);
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 

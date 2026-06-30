@@ -1,158 +1,126 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 // Initialize Gemini
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
-const model = genAI.getGenerativeModel({
-  model: 'gemini-2.0-flash',
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'dummy_key');
+const model = genAI.getGenerativeModel({ 
+  model: 'gemini-1.5-flash',
+  systemInstruction: "You are an elite productivity and discipline coach. Your name is Vibeship AI. Keep responses concise, motivational, and actionable."
 });
+const jsonModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash', generationConfig: { responseMimeType: "application/json" } });
+
+// Helper to check if we have a real key
+const hasRealKey = () => process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.length > 10;
 
 /**
- * Chat with Gemini AI — productivity assistant context
+ * Chat with Gemini AI
  */
 async function chatWithAI(message, history = []) {
-  const systemPrompt = `You are "LifeSaver AI", an intelligent productivity companion inside "The Last-Minute Life Saver" app. Your personality:
-- Encouraging but direct — you don't sugarcoat when deadlines are close
-- You give actionable advice, not vague platitudes
-- You understand task management, prioritization, and time blocking
-- You use emojis sparingly for warmth
-- Keep responses concise (2-4 sentences for simple questions, more for plans)
-- When users ask "what should I do now?", give a specific, ordered recommendation
-- You can reference the user's tasks, habits, and productivity patterns
+  if (!hasRealKey()) {
+    console.log(`[MOCK AI] chatWithAI: ${message}`);
+    return `[Demo Mode - Please add GEMINI_API_KEY to backend/.env] \n\nI received your message: "${message}". Once you add your Gemini API key, I will be able to have a real conversation with you!`;
+  }
 
-Current date/time: ${new Date().toLocaleString()}`;
-
-  const chatHistory = history
-    .filter(m => m.role === 'user' || m.role === 'assistant')
-    .slice(-10)
-    .map(m => ({
-      role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: m.content }],
+  try {
+    let formattedHistory = history.map(msg => ({
+      role: msg.role === 'user' ? 'user' : 'model',
+      parts: [{ text: msg.text }]
     }));
 
-  const chat = model.startChat({
-    history: [
-      { role: 'user', parts: [{ text: systemPrompt }] },
-      { role: 'model', parts: [{ text: 'Understood! I\'m LifeSaver AI, ready to help you crush your tasks and never miss a deadline. What can I help you with?' }] },
-      ...chatHistory,
-    ],
-  });
+    // Gemini SDK strictly requires the first message to be from 'user'
+    while (formattedHistory.length > 0 && formattedHistory[0].role !== 'user') {
+      formattedHistory.shift();
+    }
 
-  const result = await chat.sendMessage(message);
-  return result.response.text();
+    const chat = model.startChat({
+      history: formattedHistory
+    });
+
+    const result = await chat.sendMessage(message);
+    return result.response.text();
+  } catch (err) {
+    console.error('Gemini API Error:', err);
+    return "I'm having trouble connecting to my brain right now. Please check my API key!";
+  }
 }
 
 /**
- * Parse natural language task input into structured data
+ * Parse natural language into a task
  */
 async function parseTaskInput(text) {
-  const prompt = `Parse this task description into structured JSON. Extract or infer:
-- title: clear, concise task title
-- priority: "critical", "high", "medium", or "low" (infer from urgency cues)
-- priorityScore: 0-100 number (higher = more urgent)
-- deadline: specific date/time string (infer from context, use "Tomorrow" if unclear)
-- estimatedHours: realistic estimate of hours needed
-- category: one of "Work", "Personal", "Learning", "Health", "Communication", "Finance"
-- actionSteps: array of 3-5 concrete, actionable steps to complete this task
+  if (!hasRealKey()) {
+    console.log(`[MOCK AI] parseTaskInput: ${text}`);
+    let deadline = 'Tomorrow, 5:00 PM';
+    let priority = 'high';
+    if (text.toLowerCase().includes('today') || text.toLowerCase().includes('urgent')) {
+      deadline = 'Today, 11:59 PM';
+      priority = 'critical';
+    }
+    return {
+      title: text, priority, priorityScore: priority === 'critical' ? 95 : 85,
+      deadline, estimatedHours: 2, category: 'Work',
+      actionSteps: ['Break down objective', 'Execute task', 'Review']
+    };
+  }
 
-Task description: "${text}"
-
-Current date/time: ${new Date().toLocaleString()}
-
-Respond with ONLY valid JSON, no markdown formatting, no code blocks.`;
-
-  const result = await model.generateContent(prompt);
-  const responseText = result.response.text().trim();
-  
-  // Clean up potential markdown code block wrapping
-  const cleaned = responseText
-    .replace(/^```json\s*/i, '')
-    .replace(/^```\s*/i, '')
-    .replace(/\s*```$/i, '')
-    .trim();
-  
-  return JSON.parse(cleaned);
+  try {
+    const prompt = `Analyze this task input: "${text}". 
+    Return a JSON object exactly matching this structure: 
+    { "title": "short concise title", "priority": "low"|"medium"|"high"|"critical", "priorityScore": number 1-100, "deadline": "readable string like 'Today, 5 PM'", "estimatedHours": number, "category": "Work"|"Personal"|"Study"|"Health", "actionSteps": ["step 1", "step 2"] }`;
+    
+    const result = await jsonModel.generateContent(prompt);
+    return JSON.parse(result.response.text());
+  } catch (err) {
+    console.error('Gemini API Error:', err);
+    throw new Error('Failed to parse task with AI');
+  }
 }
 
 /**
- * Prioritize a list of tasks using AI
+ * Prioritize tasks
  */
 async function prioritizeTasks(tasks) {
-  const prompt = `You are a task prioritization engine. Given these tasks, re-rank them by urgency and importance.
-For each task, provide an updated priorityScore (0-100) and a brief reason.
+  if (!hasRealKey()) {
+    return tasks.map((t, i) => ({ id: t.id, priorityScore: 90 - (i * 5), priority: i === 0 ? 'critical' : 'high', reason: 'Mocked AI prioritization.' }));
+  }
 
-Tasks:
-${JSON.stringify(tasks, null, 2)}
-
-Current date/time: ${new Date().toLocaleString()}
-
-Respond with ONLY a valid JSON array of objects with: { id, priorityScore, priority, reason }
-No markdown, no code blocks.`;
-
-  const result = await model.generateContent(prompt);
-  const responseText = result.response.text().trim();
-  const cleaned = responseText
-    .replace(/^```json\s*/i, '')
-    .replace(/^```\s*/i, '')
-    .replace(/\s*```$/i, '')
-    .trim();
-  
-  return JSON.parse(cleaned);
+  try {
+    const prompt = `Analyze these tasks: ${JSON.stringify(tasks)}.
+    Return a JSON array of objects with structure: [{ "id": "task_id", "priorityScore": number 1-100, "priority": "low"|"medium"|"high"|"critical", "reason": "short explanation" }]`;
+    
+    const result = await jsonModel.generateContent(prompt);
+    return JSON.parse(result.response.text());
+  } catch (err) {
+    console.error('Gemini API Error:', err);
+    throw new Error('Failed to prioritize tasks');
+  }
 }
 
-/**
- * Generate action plan for a task
- */
 async function generateActionPlan(taskTitle, taskDescription = '') {
-  const prompt = `Generate a detailed, actionable step-by-step plan to complete this task:
-
-Task: ${taskTitle}
-${taskDescription ? `Details: ${taskDescription}` : ''}
-
-Provide 5-8 specific, concrete steps. Each step should be:
-- Clear and unambiguous
-- Achievable in a single sitting
-- Ordered logically
-
-Respond with ONLY a valid JSON array of strings. No markdown, no code blocks.`;
-
-  const result = await model.generateContent(prompt);
-  const responseText = result.response.text().trim();
-  const cleaned = responseText
-    .replace(/^```json\s*/i, '')
-    .replace(/^```\s*/i, '')
-    .replace(/\s*```$/i, '')
-    .trim();
+  if (!hasRealKey()) {
+    return ['Review requirements', 'Setup environment', 'Implement', 'Test'];
+  }
   
-  return JSON.parse(cleaned);
+  try {
+    const prompt = `Create a step-by-step action plan for this task: Title: ${taskTitle}. Desc: ${taskDescription}. Return a JSON array of strings, where each string is a step.`;
+    const result = await jsonModel.generateContent(prompt);
+    return JSON.parse(result.response.text());
+  } catch (err) {
+    return ['Step 1', 'Step 2', 'Step 3'];
+  }
 }
 
-/**
- * Generate productivity insights from task history
- */
 async function generateInsights(taskHistory, habitData) {
-  const prompt = `Analyze this user's productivity data and provide 3-4 actionable insights:
-
-Task History: ${JSON.stringify(taskHistory)}
-Habit Data: ${JSON.stringify(habitData)}
-
-For each insight, provide:
-- icon: a single relevant emoji
-- title: short title (2-4 words)
-- value: the key metric or finding
-- description: actionable recommendation (1 sentence)
-
-Respond with ONLY valid JSON array. No markdown, no code blocks.`;
-
-  const result = await model.generateContent(prompt);
-  const responseText = result.response.text().trim();
-  const cleaned = responseText
-    .replace(/^```json\s*/i, '')
-    .replace(/^```\s*/i, '')
-    .replace(/\s*```$/i, '')
-    .trim();
+  if (!hasRealKey()) {
+    return [{ icon: '🔥', title: 'Demo Insight', value: '100%', description: 'Add Gemini key for real insights' }];
+  }
   
-  return JSON.parse(cleaned);
+  try {
+    const prompt = `Analyze task history and return 3 productivity insights. Return a JSON array of objects matching: [{ "icon": "emoji", "title": "short title", "value": "short metric", "description": "1 sentence explanation" }]`;
+    const result = await jsonModel.generateContent(prompt);
+    return JSON.parse(result.response.text());
+  } catch (err) {
+    return [{ icon: '📈', title: 'Error', value: 'N/A', description: 'Failed to generate insights' }];
+  }
 }
 
 module.exports = {

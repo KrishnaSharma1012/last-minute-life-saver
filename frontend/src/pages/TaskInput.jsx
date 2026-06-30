@@ -177,7 +177,39 @@ export default function TaskInput() {
         })
       }
 
-      toast.success('🎉 Task saved! Check your dashboard.')
+      const MOTIVATIONAL_QUOTES = [
+        "Discipline is choosing between what you want now and what you want most.",
+        "Consistency is what transforms average into excellence.",
+        "Hard work beats talent when talent doesn't work hard.",
+        "Success is the sum of small efforts, repeated day in and day out.",
+        "Don't stop when you're tired. Stop when you're done.",
+        "The secret of your future is hidden in your daily routine.",
+        "Self-belief and hard work will always earn you success. - Virat Kohli",
+        "Whatever you want to do, do it with full passion and work really hard towards it. - Virat Kohli",
+        "If you can stay positive in a negative situation, you win. - Virat Kohli",
+        "Focus on the process, not the result. - Virat Kohli",
+        "We are what we repeatedly do. Excellence, then, is not an act, but a habit. - Aristotle",
+        "You don't have to be extreme, just consistent."
+      ];
+      const randomQuote = MOTIVATIONAL_QUOTES[Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length)];
+
+      toast.custom((t) => (
+        <div className="flex flex-col gap-2 p-5 bg-[#110e24] border border-purple-500/30 rounded-2xl shadow-[0_10px_40px_-10px_rgba(168,85,247,0.3)] w-[350px] relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-purple-500 to-indigo-500" />
+          <div className="absolute -top-10 -right-10 w-24 h-24 bg-purple-500/10 blur-[20px] rounded-full" />
+          
+          <div className="flex items-center gap-3 relative z-10">
+            <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0 border border-emerald-500/30">
+              <CheckCircle2 size={16} className="text-emerald-400" />
+            </div>
+            <span className="font-bold text-white text-[15px] font-heading">Task Saved Successfully!</span>
+          </div>
+          
+          <div className="mt-2 relative z-10 bg-white/[0.03] p-3 rounded-xl border border-white/[0.05] italic text-muted-foreground/90 text-[13px] leading-relaxed">
+            "{randomQuote}"
+          </div>
+        </div>
+      ), { duration: 6000 })
       navigate('/')
     } catch (error) {
       console.error('Error saving task:', error)

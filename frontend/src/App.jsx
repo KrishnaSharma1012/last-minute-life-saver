@@ -9,6 +9,7 @@ import CalendarView from './pages/CalendarView'
 import Analytics from './pages/Analytics'
 import Habits from './pages/Habits'
 import Login from './pages/Login'
+import AlarmSystem from './components/AlarmSystem'
 
 // Protected route wrapper
 function ProtectedRoute({ children }) {
@@ -34,6 +35,10 @@ function AppLayout() {
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
       <div className="fixed inset-0 z-0 bg-[linear-gradient(rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:56px_56px] pointer-events-none" />
+      
+      {/* Global hidden background components */}
+      <AlarmSystem />
+      
       <Sidebar />
       <div className="relative z-10 flex flex-1 flex-col overflow-hidden min-w-0">
         <TopBar />

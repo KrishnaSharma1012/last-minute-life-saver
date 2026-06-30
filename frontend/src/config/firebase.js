@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app'
-import { getAuth, GoogleAuthProvider, connectAuthEmulator } from 'firebase/auth'
-import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore'
+import { getAuth, GoogleAuthProvider } from 'firebase/auth'
+import { getFirestore } from 'firebase/firestore'
+import { getMessaging } from 'firebase/messaging'
 
 // Firebase configuration
 const firebaseConfig = {
@@ -26,5 +27,6 @@ googleProvider.addScope('email')
 
 // Firestore
 export const db = getFirestore(app)
+export const messaging = isDemoMode ? null : getMessaging(app)
 
 export default app

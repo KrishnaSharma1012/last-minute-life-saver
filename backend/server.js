@@ -39,9 +39,12 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Something went wrong!', message: err.message });
 });
 
+const { startPushService } = require('./services/pushService');
+
 app.listen(PORT, () => {
   console.log(`🚀 Last-Minute Life Saver API running on port ${PORT}`);
   console.log(`🧠 Gemini AI: ${process.env.GEMINI_API_KEY ? 'Connected ✅' : 'Key missing ❌'}`);
+  startPushService();
 });
 
 module.exports = app;
